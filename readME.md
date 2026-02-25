@@ -32,13 +32,13 @@ Still in Windows PowerShell Admin, run these two commands (replace 2-3 with your
 Bind the device (tells Windows to let go):
 ```
 PowerShell
-usbipd bind --busid 2-3
+usbipd bind -b 2-3
 ```
 
 Attach to WSL:
 ```
 PowerShell
-usbipd attach --wsl --busid 2-3
+usbipd attach --wsl -b 2-3
 ```
 
 ### Verify in WSL
@@ -54,20 +54,14 @@ To see the actual port name PlatformIO will use (usually /dev/ttyACM0 or /dev/tt
 dmesg | tail
 ```
 
-### Final Permission Fix
-By default, Linux might block your user from talking to the serial port. Run this once in WSL to give yourself permission:
-
-```Bash
-sudo usermod -a -G dialout $USER
-```
 **Important: You must restart WSL for this to take effect. Run wsl --shutdown in PowerShell, then reopen your WSL terminal.**
 
 ### Auto-Attach
-If you get tired of typing the BUSID, you can use usbipd attach --wsl --busid <ID> --auto-attach. This will keep the connection alive even if the Arduino resets during a code upload.
+If you get tired of typing the BUSID, you can use 
+```usbipd attach --wsl --b <ID> --auto-attach.```
+This will keep the connection alive even if the Arduino resets during a code upload.
 
-**Example:**
-
-**Powershell**
+**Powershell - Showing connected device**
 ```
 # usbipd attach --wsl -b 2-6 --auto-attach
 usbipd: info: Using WSL distribution 'Ubuntu' to attach; the device will be available in all WSL 2 distributions.
@@ -81,7 +75,7 @@ WSL 2026-02-25 19:27:09 Attach command for device 2-6 succeeded.
 WSL 2026-02-25 19:27:17 Device 2-6 is now attached.
 ```
 
-**WSL**
+**WSL - Showing connected device**
 ```
 lsusb
 Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
@@ -90,81 +84,7 @@ Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
 ```
 
 ### Uploading the project to PlatformIO 
+![VS_Code_Platform_IO_Upload](docs/VS_Code_Platform_IO_Upload.png)
 
-### Building the Project 🛠️
-
-For **Release** build (optimized, no debug symbols)
-```
-From the /build directory:
-cmake -DCMAKE_BUILD_TYPE=Release ..
-```
-
-For **Debug** build (optimized, no debug symbols)
-```
-From the /build directory:
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-```
-
-### Hard Reset (if you encounter build issues): 🔁
-Clean the build environment to ensure CMake actually sees your changes.
-```
-cd /mnt/c/Development/Projects/C++_BlackJack/build
-rm -rf *
-cmake ..
-make
-```
-
-### Running the Project 🚀
-```
-./BlackJackAI [Train-AI-or-Not] [Play-Manual-or-Not] [Display-GUI]
-```
-
-**Arguments:**
-
-- **Train-AI:** ```0``` = Train new model, ```1``` = Load existing model
-- **Play-Mode:** ```0``` = Manual play, ```1``` = AI plays
-- **Display-GUI:** ```0``` = Console only, ```1``` = GUI display
-
-**Examples:**
-```
-./BlackjackAI 0 0 0    # Train AI, you play manually, console only
-./BlackjackAI 1 1 0    # Load AI, AI plays, console only
-./BlackjackAI 0 0 1    # Train AI, you play manually, with GUI
-./BlackjackAI 1 1 1    # Load AI, AI plays, with GUI
-```
-### How the AI works 🧠
-
-#### Q-Learning State Definition: 
-Each game state is represented by three values:
-
-- Player's current hand total (e.g., 12-21)
-- Dealer's visible card value (e.g., 2-11)
-- Whether the player has an Ace that can be counted as 1 (soft hand flag)
-
-#### Actions:
-    0 = Stand (Stop drawing)
-    1 = Hit (Draw another card)
-
-#### Q-Table: 
-A table that stores values for each (state, action) pair. Higher values indicate better decisions for that situation. For example, the AI learns that hitting when you have 12 and the dealer shows a 6 is generally good, so that Q-value is high.
-
-#### Training Process:
-The Silent Trainer runs 250,000 simulated hands using epsilon-greedy strategy:
-
-- **Exploitation (80%)**: AI picks the best-known action
-- **Exploration (20%)**: AI tries random actions to discover new strategies
-
-#### After Training:
-Once trained, the Q-Table is saved to a SQLite database (blackjack_brain.db). When you play, the AI looks up each state in the Q-Table and uses the learned knowledge to make decisions — no randomness, just playing optimally.
-
-### Game Features ✨
-- Interactive GUI with card images
-- Manual player input (H for hit, S for stand)
-- AI decision-making with trained Q-Learning model
-- Blackjack detection (instant win on 21)
-- Win/Loss/Tie determination
-- Play multiple rounds in one session
-
-### Game Screen
-![Game Sample](/assets/docs/game_sample.png)
-
+### Viewing the running code in PlatformIO
+![VS_Code_Platform_IO_Serial_Monitor](docs/VS_Code_Platform_IO_Serial_Monitor.png)
